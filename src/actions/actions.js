@@ -1,8 +1,13 @@
-import Redis from "ioredis";
-import JSONCache from "redis-json";
+import puppeteer from "puppeteer";
+import promptPreferredVoice from "./promptPreferredVoice.js";
+import promptUserLanguage from "./promptUserLanguage.js";
+import promptVideoLanguage from "./promptVideoLanguage.js";
+import jsonCache from "../redis.js";
+import getAllVideos from "./downloadVideos.js";
+import convertVideosToAudio from "./ffmpegActions.js";
 
-const redis = new Redis();
-const jsonCache = new JSONCache(redis, { prefix: "cache" });
+const browser = await puppeteer.launch({ headless: false });
+loginInstagram();
 const filterBotCommand = (entity) => entity.type == "bot_command";
 
 function checkMultipleCommandEntities(message) {
@@ -11,7 +16,7 @@ function checkMultipleCommandEntities(message) {
 }
 
 function extractCommand(message) {
-	if (!("entities" in message)) return "";
+	if (!("entities" in message)) return null;
 	const [command] = message.entities.filter(filterBotCommand);
 	const { offset, length } = command;
 	return message.text.slice(offset, length + offset);
@@ -21,97 +26,107 @@ export async function getCommandAction({ message, callback_data }) {
 	if (checkMultipleCommandEntities(message)) return noMultipleCommandsAnswer;
 
 	const command = extractCommand(message);
+
 	if (command == "/setvideolanguage") return promptVideoLanguage;
 	else if (command == "/setmylanguage") return promptUserLanguage;
 	else if (command == "/setvoice") return promptPreferredVoice;
+	else if (callback_data) return setConfigAndGetAction(message);
+	else return searchUsername;
+}
+
+async function loginInstagram() {
+	// when the app starts, the env variables are not immediately available, so we wait until they are
+	// before proceeding to log in.
+	do {
+		await new Promise((res, rej) => setTimeout(res(true), 1000));
+	} while (!process.env.BOT_USERNAME || !process.env.BOT_PASSWORD);
+
+	const botUsername = process.env.BOT_USERNAME;
+	const botPassword = process.env.BOT_PASSWORD;
+	const page = await browser.newPage();
+	await page.goto("https://www.instagram.com/accounts/login/");
+	await page.waitForSelector('input[name="username"]');
+	await page.type('input[name="username"]', botUsername);
+	await page.type('input[name="password"]', botPassword);
+	await page.click('button[type="submit"]');
+}
+
+async function getUserStories(username) {
+	const igBaseUrl = "https://instagram.com/";
+	const page = await browser.newPage();
+	await page.goto(igBaseUrl + username);
+	await page.click('img[data-testid="user-avatar"]');
+	const urls = [];
+	while (true) {
+		try {
+			await page.waitForSelector(".coreSpriteRightChevron", { timeout: 2000 });
+		} catch (e) {
+			break;
+		}
+		try {
+			await page.waitForSelector("video", { timeout: 2000 });
+			const videoSrc = await page.evaluate(() => document.querySelector("video").children[0].src);
+			urls.push(videoSrc);
+		} catch (e) {}
+		await page.click(".coreSpriteRightChevron");
+	}
+	return urls;
+}
+
+async function searchUsername({ message }) {
+	const username = message.text.trim().split(" ")[0];
+	const urls = await getUserStories(username);
+	const videos = await getAllVideos(urls);
+  const audios = await convertVideosToAudio(videos);
+	return {text: 'ok'};
+}
+
+async function setConfigAndGetAction({ chat }) {
+	const userSettings = await jsonCache.get(chat.id);
+	const { lastCommand } = userSettings;
+
+	await jsonCache.set(chat.id, {
+		...userSettings,
+		lastCommand: null,
+	});
+
+	if (lastCommand == "/setvideolanguage") return changeVideoLanguage;
+	else if (lastCommand == "/setmylanguage") return changeUserLanguage;
+	else if (lastCommand == "/setvoice") return setPreferredVoice;
 	else return invalidCommand;
 }
 
-async function promptPreferredVoice(message) {
-	const { chat } = message;
-	const userSettings = await jsonCache.get(chat.id);
-
-	await jsonCache.set(chat.id, {
-		...userSettings,
-		lastCommand: "/setvoice",
-	});
-
-	return {
-		text: "Choose a voice",
-		reply_markup: {
-			inline_keyboard: [
-				[
-					{ text: "Male", callback_data: "male" },
-					{ text: "Female", callback_data: "female" },
-				],
-			],
-		},
-	};
-}
-
-async function promptUserLanguage(message) {
-	const { chat } = message;
-	const userSettings = await jsonCache.get(chat.id);
-	await jsonCache.set(chat.id, {
-		...userSettings,
-		lastCommand: "/setmylanguage",
-	});
-
-	return {
-		text: "Choose a language",
-		reply_markup: {
-			inline_keyboard: [
-				[
-					{ text: "Português (Brasil)", callback_data: "pt-BR" },
-					{ text: "English", callback_data: "en-US" },
-				],
-				[
-					{ text: "Deutsch", callback_data: "de" },
-					{ text: "Росски", callback_data: "ru" },
-				],
-			],
-		},
-	};
-}
-
-async function promptVideoLanguage(message) {
-	const { chat } = message;
-	const userSettings = await jsonCache.get(chat.id);
-	await jsonCache.set(chat.id, {
-		...userSettings,
-		lastCommand: "/setvideolanguage",
-	});
-
-	return {
-		text: "Choose a language",
-		reply_markup: {
-			inline_keyboard: [
-				[
-					{ text: "Português (Brasil)", callback_data: "pt-BR" },
-					{ text: "English", callback_data: "en-US" },
-				],
-				[
-					{ text: "Deutsch", callback_data: "de" },
-					{ text: "Росски", callback_data: "ru" },
-				],
-			],
-		},
-	};
-}
-
-async function invalidCommand(message) {
+async function invalidCommand({ message }) {
 	return { text: "That's not a valid command." };
 }
 
-async function changeVideoLanguage(message) {
+async function changeVideoLanguage({ message, callback_data }) {
+	const { chat } = message;
+	const currentSettings = await jsonCache.get(chat.id);
+	await jsonCache.set(chat.id, {
+		...currentSettings,
+		videoLang: callback_data.data,
+	});
 	return { text: "Video language set." };
 }
 
-async function changeUserLanguage(message) {
+async function changeUserLanguage({ message, callback_data }) {
+	const { chat } = message;
+	const currentSettings = await jsonCache.get(chat.id);
+	await jsonCache.set(chat.id, {
+		...currentSettings,
+		targetLang: callback_data.data,
+	});
 	return { text: "Your preferred language was set." };
 }
 
-async function setPreferredVoice(message) {
+async function setPreferredVoice({ message, callback_data }) {
+	const { chat } = message;
+	const currentSettings = await jsonCache.get(chat.id);
+	await jsonCache.set(chat.id, {
+		...currentSettings,
+		preferredVoice: callback_data.data,
+	});
 	return { text: "Your preferred voice was set." };
 }
 

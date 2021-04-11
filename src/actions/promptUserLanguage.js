@@ -1,11 +1,11 @@
 import jsonCache from "../redis.js";
 
-async function promptVideoLanguage({ message }) {
+async function promptUserLanguage({ message }) {
 	const { chat } = message;
 	const userSettings = await jsonCache.get(chat.id);
 	await jsonCache.set(chat.id, {
 		...userSettings,
-		lastCommand: "/setvideolanguage",
+		lastCommand: "/setmylanguage",
 	});
 
 	return {
@@ -25,4 +25,4 @@ async function promptVideoLanguage({ message }) {
 	};
 }
 
-export default promptVideoLanguage;
+export default promptUserLanguage;

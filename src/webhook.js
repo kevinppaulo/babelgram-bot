@@ -6,7 +6,6 @@ import { getCommandAction, getOrCreateUserSettings } from "./actions/actions.js"
 const endpoint = (endpoint) => API_BASE_URL + process.env.BOT_TOKEN + "/" + endpoint;
 
 async function onMessageReceived(req, res) {
-
 	let message, chat, callback_data;
 	if ("callback_query" in req.body) {
 		callback_data = req.body.callback_query;
@@ -19,7 +18,7 @@ async function onMessageReceived(req, res) {
 
 	const userSettings = await getOrCreateUserSettings(chat);
 	getCommandAction({ message, callback_data })
-		.then((action) => action(message))
+		.then((action) => action({ message, callback_data }))
 		.then((answer) => reply(chat, answer))
 		.catch(console.error);
 
