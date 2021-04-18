@@ -2,7 +2,6 @@ import fs from 'fs';
 import https from 'https';
 import { nanoid } from 'nanoid';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
 function download(url) {
   console.log(`downloading ${url}`);

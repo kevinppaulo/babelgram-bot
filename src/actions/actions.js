@@ -5,6 +5,7 @@ import promptVideoLanguage from "./promptVideoLanguage.js";
 import jsonCache from "../redis.js";
 import getAllVideos from "./downloadVideos.js";
 import convertVideosToAudio from "./ffmpegActions.js";
+import transcribeAllAudios from "./transcribe.js";
 
 const browser = await puppeteer.launch({ headless: false });
 loginInstagram();
@@ -77,8 +78,17 @@ async function searchUsername({ message }) {
 	const username = message.text.trim().split(" ")[0];
 	const urls = await getUserStories(username);
 	const videos = await getAllVideos(urls);
-  const audios = await convertVideosToAudio(videos);
-	return {text: 'ok'};
+	const audios = await convertVideosToAudio(videos);
+
+	console.log("audios", audios);
+	const { chat } = message;
+	console.log("chat", chat);
+	const userPreferences = await jsonCache.get(chat.id);
+	const videoLang = userPreferences.videoLang;
+	const targetLang = userPreferences.videoLang;
+
+	const transcriptions = await transcribeAllAudios(audios, videoLang);
+	return { text: transcriptions.join("; ")};
 }
 
 async function setConfigAndGetAction({ chat }) {

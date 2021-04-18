@@ -11,6 +11,7 @@
     "express": "^4.17.1",
     "express-session": "^1.17.1",
     "ffmpeg-extract-audio": "^1.0.2",
+    "ibm-watson": "^6.0.3",
     "ioredis": "^4.25.0",
     "nanoid": "^3.1.22",
     "node-webcam": "^0.8.0",

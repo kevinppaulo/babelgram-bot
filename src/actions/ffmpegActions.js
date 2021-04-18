@@ -9,16 +9,22 @@ async function toMp3(videoPath){
   const rootPath = path.resolve(process.cwd());
   const outputFilePath = `${rootPath}/media/converted_stories/${filename}`;
 
-  await extractAudio({
-    input: videoPath,
-    output: outputFilePath
-  });
+  try{
+    await extractAudio({
+      input: videoPath,
+      output: outputFilePath
+    });
+  }catch(e){
+    return false;
+  }
+
 
   return outputFilePath;
 }
 
 async function convertVideosToAudio(videos){
-  return await Promise.all(videos.map(toMp3));
+  const audios = await Promise.all(videos.map(toMp3));
+  return audios.filter(audio => audio);
 }
 
 export default convertVideosToAudio;
