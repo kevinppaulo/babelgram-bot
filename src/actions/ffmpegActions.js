@@ -15,10 +15,9 @@ async function toMp3(videoPath){
       output: outputFilePath
     });
   }catch(e){
+    console.log("An error occurred when extracting audio from video.")
     return false;
   }
-
-
   return outputFilePath;
 }
 

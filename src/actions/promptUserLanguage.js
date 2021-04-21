@@ -8,7 +8,7 @@ async function promptUserLanguage({ message }) {
 		lastCommand: "/setmylanguage",
 	});
 
-	return {
+	return [{
 		text: "Choose a language",
 		reply_markup: {
 			inline_keyboard: [
@@ -22,7 +22,7 @@ async function promptUserLanguage({ message }) {
 				],
 			],
 		},
-	};
+	}, 'sendMessage'];
 }
 
 export default promptUserLanguage;

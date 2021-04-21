@@ -8,7 +8,7 @@ async function promptVideoLanguage({ message }) {
 		lastCommand: "/setvideolanguage",
 	});
 
-	return {
+	return [{
 		text: "Choose a language",
 		reply_markup: {
 			inline_keyboard: [
@@ -18,11 +18,10 @@ async function promptVideoLanguage({ message }) {
 				],
 				[
 					{ text: "Deutsch", callback_data: "de" },
-					{ text: "Росски", callback_data: "ru" },
 				],
 			],
 		},
-	};
+	}, 'sendMessage'];
 }
 
 export default promptVideoLanguage;

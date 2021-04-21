@@ -5,8 +5,8 @@ import { IamAuthenticator } from "ibm-watson/auth/index.js";
 
 function transcribeAudio(audioPath, videoLang) {
   return new Promise((resolve, reject) => {
-    const apiKey = process.env.WATSON_TEXT_SPEECH_KEY;
-    const serviceUrl = process.env.WATSON_TEXT_SPEECH_INST;
+    const apiKey = process.env.WATSON_SPEECH_TEXT_KEY;
+    const serviceUrl = process.env.WATSON_SPEECH_TEXT_INST;
 
     const speechToText = new SpeechToTextV1({
       authenticator: new IamAuthenticator({
@@ -30,12 +30,11 @@ function transcribeAudio(audioPath, videoLang) {
     fs.createReadStream(audioPath).pipe(recognizeStream);
 
     recognizeStream.on("data", function (event) {
-      console.log(event);
       resolve(event);
     });
 
     recognizeStream.on("error", function (event) {
-      console.error(event);
+      console.error("An error occurred when transcribing the text from .mp3 file.");
       reject(event);
     });
   });

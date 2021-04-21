@@ -9,7 +9,7 @@ async function promptPreferredVoice({message}) {
 		lastCommand: "/setvoice",
 	});
 
-	return {
+	return [{
 		text: "Choose a voice",
 		reply_markup: {
 			inline_keyboard: [
@@ -19,7 +19,7 @@ async function promptPreferredVoice({message}) {
 				],
 			],
 		},
-	};
+	}, 'sendMessage'];
 }
 
 export default promptPreferredVoice;
