@@ -34,6 +34,7 @@ export async function getCommandAction({ message, callback_data }) {
 	else if (command == "/setmylanguage") return promptUserLanguage;
 	else if (command == "/setvoice") return promptPreferredVoice;
 	else if (command == "/start") return startCommand;
+	else if (command == "/debug") return debugChat;
 	else if (callback_data) return setConfigAndGetAction(message);
 	else return searchUsername;
 }
@@ -115,8 +116,20 @@ async function setConfigAndGetAction({ chat }) {
 	else return invalidCommand;
 }
 
+async function debugChat({ message }) {
+	const { chat } = message;
+	const userSettings = await jsonCache.get(chat.id);
+	return [
+		{
+			parse_mode: 'markdown',
+			text: "```javascript\n" + JSON.stringify(userSettings, null, 2) + "\n```",
+		},
+		"sendMessage",
+	];
+}
+
 async function invalidCommand({ message }) {
-	return { text: "That's not a valid command." };
+	return [{ text: "That's not a valid command." }, "sendMessage"];
 }
 
 async function changeVideoLanguage({ message, callback_data }) {
