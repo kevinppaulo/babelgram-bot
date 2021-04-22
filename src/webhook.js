@@ -30,7 +30,7 @@ async function onMessageReceived(req, res) {
 	res.sendStatus(200);
 }
 
-async function reply(chat, answer, msgEndpoint) {
+export async function reply(chat, answer, msgEndpoint) {
 	if (Array.isArray(answer)) {
 		for (const { audio } of answer) {
 			const payload = { chat_id: chat.id, audio };

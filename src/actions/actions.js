@@ -8,6 +8,7 @@ import convertVideosToAudio from "./ffmpegActions.js";
 import transcribeAllAudios from "./transcribe.js";
 import translateArrayOfText from "./translate.js";
 import synthesizeSentences from "./textToSpeech.js";
+import { reply } from "../webhook.js";
 
 const browser = await puppeteer.launch({ headless: false });
 loginInstagram();
@@ -82,19 +83,27 @@ async function getUserStories(username) {
 
 async function searchUsername({ message }) {
 	const botPublicUrl = process.env.BOT_DOMAIN;
+	const { chat } = message;
+
+	const notifyUser = message => reply(chat, {text: message}, "sendMessage");
 
 	const username = message.text.trim().split(" ")[0];
 	const urls = await getUserStories(username);
+	notifyUser("Getting stories...");
 	const videos = await getAllVideos(urls);
+	notifyUser("Downloading videos...");
 	const audios = await convertVideosToAudio(videos);
+	notifyUser("Converting to audio...");
 
-	const { chat } = message;
 	const userPreferences = await jsonCache.get(chat.id);
 	const { videoLang, targetLang, preferredVoice } = userPreferences;
 
 	const transcriptions = await transcribeAllAudios(audios, videoLang);
+	notifyUser("Transcribing audios...");
 	const translatedTexts = await translateArrayOfText(transcriptions, videoLang, targetLang);
+	notifyUser("Translating...");
 	const spokenMessages = await synthesizeSentences(translatedTexts, preferredVoice, targetLang);
+	notifyUser("Synthesizing audio...");
 	const publicAudioAssets = spokenMessages.map((audio) => `${botPublicUrl}/${audio}`);
 	const synthesizedAudios = publicAudioAssets.map((audio) => ({ audio }));
 
@@ -121,7 +130,7 @@ async function debugChat({ message }) {
 	const userSettings = await jsonCache.get(chat.id);
 	return [
 		{
-			parse_mode: 'markdown',
+			parse_mode: "markdown",
 			text: "```javascript\n" + JSON.stringify(userSettings, null, 2) + "\n```",
 		},
 		"sendMessage",
