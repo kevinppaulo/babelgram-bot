@@ -17,5 +17,12 @@ Speech to Text, Translation and Text to Speech services.
 
 ![image](https://user-images.githubusercontent.com/28049114/115643988-24ea8000-a2f4-11eb-810c-fbcefbd29646.png)
 
+### commands
+Babelgram listens for the following commands:
+1. ```/start``` is sent every time a user starts a conversation with your bot. Doesn't really do anything;
+2. ```/setvideolanguage``` sets the language of the video on instagram;
+3. ```/setmylanguage``` sets the language that the video will be translated to;
+4. ```/setvoice``` gives you a choice between male and female voices;
+
 ### Notes
 currently the bot expects you to set the webhook in the following format: ```https://your-domain.com/{yourSecretToken}/update/``` where ```{yourSecretToken}``` is the ```WEBHOOK_SECRET``` configured in the ```.env ``` file.
