@@ -166,7 +166,7 @@ export async function getOrCreateUserSettings(chat) {
 
 	if (!userSettings) {
 		userSettings = {
-			jkkkvideoLang: "en-US",
+			videoLang: "en-US",
 			targetLang: "pt-BR",
 			lastCommand: null,
 			preferredVoice: "female",
