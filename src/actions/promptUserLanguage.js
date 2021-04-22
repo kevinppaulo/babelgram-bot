@@ -1,4 +1,11 @@
 import jsonCache from "../redis.js";
+import { availableLanguages } from "../constants.js";
+
+function userLanguagesToButtons() {
+	return Object.keys(availableLanguages).map((languageName) => {
+		return [{ text: languageName, callback_data: availableLanguages[languageName] }];
+	});
+}
 
 async function promptUserLanguage({ message }) {
 	const { chat } = message;
@@ -8,21 +15,15 @@ async function promptUserLanguage({ message }) {
 		lastCommand: "/setmylanguage",
 	});
 
-	return [{
-		text: "Choose a language",
-		reply_markup: {
-			inline_keyboard: [
-				[
-					{ text: "Português (Brasil)", callback_data: "pt-BR" },
-					{ text: "English", callback_data: "en-US" },
-				],
-				[
-					{ text: "Deutsch", callback_data: "de" },
-					{ text: "Росски", callback_data: "ru" },
-				],
-			],
+	return [
+		{
+			text: "Choose a language",
+			reply_markup: {
+				inline_keyboard: userLanguagesToButtons(),
+			},
 		},
-	}, 'sendMessage'];
+		"sendMessage",
+	];
 }
 
 export default promptUserLanguage;
