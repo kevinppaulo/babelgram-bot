@@ -1,6 +1,6 @@
 import jsonCache from "../redis.js";
 
-async function promptPreferredVoice({message}) {
+async function promptPreferredVoice({message, callback_data}) {
 	const { chat } = message;
 	const userSettings = await jsonCache.get(chat.id);
 

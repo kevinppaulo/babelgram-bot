@@ -1,4 +1,4 @@
-import { API_BASE_URL } from './constants.js';
+import { API_BASE_URL } from './constants.js'
 import axios from 'axios';
 import { getCommandAction, getOrCreateUserSettings } from './actions/actions.js';
 
