@@ -10,7 +10,10 @@ import translateArrayOfText from "./translate.js";
 import synthesizeSentences from "./textToSpeech.js";
 import { reply } from "../webhook.js";
 
-const browser = await puppeteer.launch({ headless: false });
+const browser = await puppeteer.launch({
+	args: ['--no-sandbox'],
+	headless: false ,
+});
 loginInstagram();
 const filterBotCommand = (entity) => entity.type == "bot_command";
 
