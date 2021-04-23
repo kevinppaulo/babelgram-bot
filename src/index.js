@@ -18,3 +18,7 @@ app.listen(process.env.APP_PORT, () => {
 app.post('/' + appSecretToken + '/update', onMessageReceived);
 
 app.use(express.static('./media/synthesized/'));
+
+app.get('/', function(req, res) {
+    res.sendFile(path.join(__dirname + '/src/index.html'));
+});
