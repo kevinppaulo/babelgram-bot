@@ -1,7 +1,14 @@
 import Redis from "ioredis";
 import JSONCache from "redis-json";
 
-const redis = new Redis(process.env.REDISTOGO_URL);
-const jsonCache = new JSONCache(redis, { prefix: "cache" });
+function redis(){
+	if(process.env.REDISTOGO_URL)
+		return new Redis(process.env.REDISTOGO_URL)
+	return new Redis();
+}
+
+const redisInst = redis()
+
+const jsonCache = new JSONCache(redisInst, { prefix: "cache" });
 
 export default jsonCache;
