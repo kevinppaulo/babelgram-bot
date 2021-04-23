@@ -11,7 +11,7 @@ import synthesizeSentences from "./textToSpeech.js";
 import { reply } from "../webhook.js";
 
 const browser = await puppeteer.launch({
-	args: ['--no-sandbox'],
+	args: ['--no-sandbox','--disable-setuid-sandbox'],
 	headless: false ,
 });
 loginInstagram();
