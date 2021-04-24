@@ -10,6 +10,7 @@ import translateArrayOfText from "./translate.js";
 import synthesizeSentences from "./textToSpeech.js";
 import { reply } from "../webhook.js";
 import fs from "fs";
+import {log} from 'mustang-log';
 
 const browser = await puppeteer.launch({
 	args: ["--no-sandbox", "--disable-setuid-sandbox"],
@@ -61,6 +62,7 @@ async function loginInstagram() {
 		await new Promise((res, rej) => setTimeout(res(true), 1000));
 	} while (!process.env.BOT_USERNAME || !process.env.BOT_PASSWORD);
 
+  log("Logging in", "INFO", true);
 	const cwd = process.cwd();
 	const cookieFilepath = cwd + "/sessionId.txt";
 	let oldCookie = "";
@@ -76,11 +78,13 @@ async function loginInstagram() {
 	if (oldCookie) await page.setCookies([{ name: "sessionid", value: oldCookie }]);
 	await page.goto("https://www.instagram.com/");
 	try {
+    log("Waiting for login confirmation", "INFO", true);
 		await page.waitForSelector(".logged-in");
 		const cookies = await page.cookies();
 		const sessionId = cookies.find((cookie) => cookie.name == "sessionid").value;
 		fs.writeFileSync(cookieFilepath, sessionId);
 	} catch (e) {
+    log("Could not restore session. Logging in manually", "INFO", true);
 		await page.waitForSelector('input[name="username"]');
 		await page.type('input[name="username"]', botUsername);
 		await page.type('input[name="password"]', botPassword);
@@ -94,7 +98,7 @@ async function loginInstagram() {
 		);
 
 		if (suspiciousActivityDetected) {
-			console.log("Suspicious activity detected.");
+      log("Suspicious activity was detected", "warn", true);
 			// clicks the send verification code to email button
 			await page.click("form button");
 			await page.waitForSelector("input#security_code");
@@ -108,11 +112,13 @@ async function loginInstagram() {
 			const cookies = await page.cookies();
 			const sessionId = cookies.find((cookie) => cookie.name == "sessionid").value;
 			fs.writeFileSync(cookieFilepath, sessionId);
+      log("Logged in.", "INFO", true);
 		}
 	}
 }
 
 async function getUserStories(username) {
+  log(`Searching for username ${username}`, "INFO", true);
 	const igBaseUrl = "https://instagram.com/";
 	const page = await browser.newPage();
 	await page.setUserAgent(

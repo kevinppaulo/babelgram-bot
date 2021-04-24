@@ -16,7 +16,7 @@ app.use(bodyParser.urlencoded());
 
 // start listenning
 app.listen(process.env.PORT, () => {
-    console.log(`Example app listening at http://localhost:${process.env.PORT}`);
+    log(`Example app listening at http://localhost:${process.env.PORT}`, "INFO", true);
 });
 
 // endpoints

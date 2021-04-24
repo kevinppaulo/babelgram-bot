@@ -13,6 +13,7 @@
     "ffmpeg-extract-audio": "^1.0.2",
     "ibm-watson": "^6.0.3",
     "ioredis": "^4.25.0",
+    "mustang-log": "^1.1.2",
     "nanoid": "^3.1.22",
     "node-webcam": "^0.8.0",
     "nodemon": "^2.0.7",
