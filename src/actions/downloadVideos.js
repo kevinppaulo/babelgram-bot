@@ -11,7 +11,7 @@ function download(url) {
 		const rootPath = path.resolve(process.cwd());
 
 		https.get(url, (res) => {
-			const path = `${rootPath}/media/downloaded_stories/${filename}${extension}`;
+			const path = `${rootPath}/public/media/downloaded_stories/${filename}${extension}`;
 			const file = fs.createWriteStream(path);
 			res.pipe(file);
 			file.on('finish', () => {

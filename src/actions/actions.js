@@ -9,10 +9,11 @@ import transcribeAllAudios from "./transcribe.js";
 import translateArrayOfText from "./translate.js";
 import synthesizeSentences from "./textToSpeech.js";
 import { reply } from "../webhook.js";
+import fs from "fs";
 
 const browser = await puppeteer.launch({
-	args: ['--no-sandbox','--disable-setuid-sandbox'],
-	headless: true ,
+	args: ["--no-sandbox", "--disable-setuid-sandbox"],
+	headless: false,
 });
 
 loginInstagram();
@@ -28,6 +29,17 @@ function extractCommand(message) {
 	const [command] = message.entities.filter(filterBotCommand);
 	const { offset, length } = command;
 	return message.text.slice(offset, length + offset);
+}
+
+function getSecurityCode() {
+	const filepath = process.cwd() + "/security-code.txt";
+	return new Promise((resolve) => {
+		setTimeout(function () {
+			fs.readFile(filepath, "utf-8", function (err, data) {
+				resolve(data);
+			});
+		}, 1000 * 60);
+	});
 }
 
 export async function getCommandAction({ message, callback_data }) {
@@ -49,21 +61,63 @@ async function loginInstagram() {
 		await new Promise((res, rej) => setTimeout(res(true), 1000));
 	} while (!process.env.BOT_USERNAME || !process.env.BOT_PASSWORD);
 
+	const cwd = process.cwd();
+	const cookieFilepath = cwd + "/sessionId.txt";
+	let oldCookie = "";
+	try {
+		const oldCookie = fs.readFileSync(cookieFilepath);
+	} catch (e) {}
 	const botUsername = process.env.BOT_USERNAME;
 	const botPassword = process.env.BOT_PASSWORD;
 	const page = await browser.newPage();
-	await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
-	await page.goto("https://www.instagram.com/accounts/login/");
-	await page.waitForSelector('input[name="username"]');
-	await page.type('input[name="username"]', botUsername);
-	await page.type('input[name="password"]', botPassword);
-	await page.click('button[type="submit"]');
+	await page.setUserAgent(
+		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36"
+	);
+	if (oldCookie) await page.setCookies([{ name: "sessionid", value: oldCookie }]);
+	await page.goto("https://www.instagram.com/");
+	try {
+		await page.waitForSelector(".logged-in");
+		const cookies = await page.cookies();
+		const sessionId = cookies.find((cookie) => cookie.name == "sessionid").value;
+		fs.writeFileSync(cookieFilepath, sessionId);
+	} catch (e) {
+		await page.waitForSelector('input[name="username"]');
+		await page.type('input[name="username"]', botUsername);
+		await page.type('input[name="password"]', botPassword);
+		await Promise.all([
+			page.click('button[type="submit"]'),
+			page.waitForNavigation({ waitUntil: "networkidle0" }),
+		]);
+
+		const suspiciousActivityDetected = await page.evaluate(() =>
+			document.location.href.includes("challenge")
+		);
+
+		if (suspiciousActivityDetected) {
+			console.log("Suspicious activity detected.");
+			// clicks the send verification code to email button
+			await page.click("form button");
+			await page.waitForSelector("input#security_code");
+			const securityCode = await getSecurityCode();
+			await page.type("input#security_code", securityCode);
+			await Promise.all([
+				page.click("form button"),
+				page.waitForNavigation({ waitUntil: "networkidle0" }),
+			]);
+			await page.waitForSelector(".logged-in");
+			const cookies = await page.cookies();
+			const sessionId = cookies.find((cookie) => cookie.name == "sessionid").value;
+			fs.writeFileSync(cookieFilepath, sessionId);
+		}
+	}
 }
 
 async function getUserStories(username) {
 	const igBaseUrl = "https://instagram.com/";
 	const page = await browser.newPage();
-	await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
+	await page.setUserAgent(
+		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36"
+	);
 	await page.goto(igBaseUrl + username);
 	await page.click('img[data-testid="user-avatar"]');
 	const urls = [];
@@ -89,7 +143,7 @@ async function searchUsername({ message }) {
 	const botPublicUrl = process.env.BOT_DOMAIN;
 	const { chat } = message;
 
-	const notifyUser = message => reply(chat, {text: message}, "sendMessage");
+	const notifyUser = (message) => reply(chat, { text: message }, "sendMessage");
 
 	const username = message.text.trim().split(" ")[0];
 	notifyUser("Getting stories...");

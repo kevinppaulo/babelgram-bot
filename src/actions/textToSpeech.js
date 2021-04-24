@@ -20,7 +20,6 @@ function textToVoice(text, preferredVoicegender, targetLang) {
 		const languageVoices = availableVoices.result.voices.filter(
 			({ language }) => language == targetLang
 		);
-
 		const findByGender = ({ gender }) => gender == preferredVoicegender;
 		const languageHasPreferredGenderVoice = languageVoices.filter(findByGender).length;
 
@@ -35,7 +34,8 @@ function textToVoice(text, preferredVoicegender, targetLang) {
 		};
 		const filename = nanoid() + ".mp3";
 		const rootPath = path.resolve(process.cwd());
-		const filepath = `${rootPath}/media/synthesized/${filename}`;
+    const publicPath = `/public/media/synthesized/${filename}`;
+		const filepath = `${rootPath}${publicPath}`;
 
 		try {
 			const data = [];
@@ -48,7 +48,7 @@ function textToVoice(text, preferredVoicegender, targetLang) {
 			result.on("end", function () {
 				const binary = Buffer.concat(data);
 				fs.writeFileSync(filepath, binary);
-				resolve(filename);
+				resolve(publicPath);
 			});
 		} catch (err) {
 			console.log(`error: ${err.message}`);

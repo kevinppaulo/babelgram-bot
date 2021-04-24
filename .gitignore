@@ -39,6 +39,10 @@ build/Release
 
 # media files downloaded and converted
 media/
+public/media/
+security-code.txt
+sessionId.txt
+
 
 # Dependency directories
 node_modules/

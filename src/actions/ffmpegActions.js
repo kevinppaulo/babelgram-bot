@@ -7,7 +7,7 @@ async function toMp3(videoPath){
 	const filename = nanoid() + '.mp3';
 
   const rootPath = path.resolve(process.cwd());
-  const outputFilePath = `${rootPath}/media/converted_stories/${filename}`;
+  const outputFilePath = `${rootPath}/public/media/converted_stories/${filename}`;
 
   try{
     await extractAudio({
