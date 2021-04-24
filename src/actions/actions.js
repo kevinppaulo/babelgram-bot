@@ -12,8 +12,9 @@ import { reply } from "../webhook.js";
 
 const browser = await puppeteer.launch({
 	args: ['--no-sandbox','--disable-setuid-sandbox'],
-	headless: false ,
+	headless: true ,
 });
+
 loginInstagram();
 const filterBotCommand = (entity) => entity.type == "bot_command";
 
@@ -31,9 +32,7 @@ function extractCommand(message) {
 
 export async function getCommandAction({ message, callback_data }) {
 	if (checkMultipleCommandEntities(message)) return noMultipleCommandsAnswer;
-
 	const command = extractCommand(message);
-
 	if (command == "/setvideolanguage") return promptVideoLanguage;
 	else if (command == "/setmylanguage") return promptUserLanguage;
 	else if (command == "/setvoice") return promptPreferredVoice;
@@ -53,6 +52,7 @@ async function loginInstagram() {
 	const botUsername = process.env.BOT_USERNAME;
 	const botPassword = process.env.BOT_PASSWORD;
 	const page = await browser.newPage();
+	await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
 	await page.goto("https://www.instagram.com/accounts/login/");
 	await page.waitForSelector('input[name="username"]');
 	await page.type('input[name="username"]', botUsername);
@@ -63,6 +63,7 @@ async function loginInstagram() {
 async function getUserStories(username) {
 	const igBaseUrl = "https://instagram.com/";
 	const page = await browser.newPage();
+	await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
 	await page.goto(igBaseUrl + username);
 	await page.click('img[data-testid="user-avatar"]');
 	const urls = [];
@@ -91,25 +92,24 @@ async function searchUsername({ message }) {
 	const notifyUser = message => reply(chat, {text: message}, "sendMessage");
 
 	const username = message.text.trim().split(" ")[0];
-	const urls = await getUserStories(username);
 	notifyUser("Getting stories...");
-	const videos = await getAllVideos(urls);
+	const urls = await getUserStories(username);
 	notifyUser("Downloading videos...");
-	const audios = await convertVideosToAudio(videos);
+	const videos = await getAllVideos(urls);
 	notifyUser("Converting to audio...");
+	const audios = await convertVideosToAudio(videos);
 
 	const userPreferences = await jsonCache.get(chat.id);
 	const { videoLang, targetLang, preferredVoice } = userPreferences;
 
-	const transcriptions = await transcribeAllAudios(audios, videoLang);
 	notifyUser("Transcribing audios...");
-	const translatedTexts = await translateArrayOfText(transcriptions, videoLang, targetLang);
+	const transcriptions = await transcribeAllAudios(audios, videoLang);
 	notifyUser("Translating...");
-	const spokenMessages = await synthesizeSentences(translatedTexts, preferredVoice, targetLang);
+	const translatedTexts = await translateArrayOfText(transcriptions, videoLang, targetLang);
 	notifyUser("Synthesizing audio...");
+	const spokenMessages = await synthesizeSentences(translatedTexts, preferredVoice, targetLang);
 	const publicAudioAssets = spokenMessages.map((audio) => `${botPublicUrl}/${audio}`);
 	const synthesizedAudios = publicAudioAssets.map((audio) => ({ audio }));
-
 	return [synthesizedAudios, "sendAudio"];
 }
 
