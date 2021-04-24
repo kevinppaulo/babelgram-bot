@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import onMessageReceived from "./webhook.js";
 import path from "path";
 import fs, { copyFileSync } from 'fs';
+import {log} from 'mustang-log';
 
 // config
 dotenv.config();
