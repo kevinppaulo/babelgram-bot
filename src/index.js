@@ -13,8 +13,8 @@ const rootPath = path.resolve(process.cwd());
 app.use(bodyParser.json());
 
 // start listenning
-app.listen(process.env.APP_PORT, () => {
-    console.log(`Example app listening at http://localhost:${process.env.APP_PORT}`);
+app.listen(process.env.PORT, () => {
+    console.log(`Example app listening at http://localhost:${process.env.PORT}`);
 });
 
 // endpoints
