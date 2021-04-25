@@ -34,8 +34,8 @@ function textToVoice(text, preferredVoicegender, targetLang) {
 		};
 		const filename = nanoid() + ".mp3";
 		const rootPath = path.resolve(process.cwd());
-    const publicPath = `/public/media/synthesized/${filename}`;
-		const filepath = `${rootPath}${publicPath}`;
+    const publicPath = `media/synthesized/${filename}`;
+		const filepath = `${rootPath}/public/${publicPath}`;
 
 		try {
 			const data = [];
